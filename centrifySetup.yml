@@ -1,0 +1,114 @@
+---
+
+- name: Gather the rpm package facts
+  package_facts:
+    manager: auto
+
+- name: Check whether a package called CentrifyDC is installed
+  debug:
+    msg: CentrifyDC are not installed!
+  when: "'CentrifyDC' not in ansible_facts.packages"
+
+- name: Install CentrifyDC Software
+  block:
+
+
+    - name: "Check connectivity https://{{ media_server }} and it returns a status 200"
+      uri:
+        url: https://{{ media_server }}/agents/{{ rh_centrify_sw }}
+        validate_certs: no
+        status_code: 200
+      register: centrify_result
+
+    - name: Create centrify directories
+      file:
+        path: /root/agents
+        state: directory
+        mode: '0755'
+
+    - name: Unarchive a file that is already on the remote machine
+      unarchive:
+        src: "https://{{ media_server }}/agents/{{ rh_centrify_sw }}"
+        dest: /root/agents
+        remote_src: yes
+        mode: '0755'
+        validate_certs: no
+      register: centrify_result
+
+    # - name: Create centrify target directories
+    #   file:
+    #     path: /root/agents
+    #     state: directory
+    #     mode: '0755'
+
+    # - name: Copy agent files to target hosts
+    #   copy:
+    #     src: /root/agents
+    #     dest: /root/agents
+    #     remote_src: no
+    #     follow: yes
+        
+    - name: Install Centrify Agent 
+      shell: '/root/agents/rhelx86_64/install.sh --ent-suite --adjoin_opt="-z {{ centrify_zone }} -c "OU=UnixServers,OU=UNIX,DC=tt-tim,DC=tr" -u {{ centrify_user }} {{ centrify_fqdn }} --password {{ centrify_password }} --force" --enable-da'
+      register: centrify_result
+      failed_when: centrify_result.rc != 0
+      changed_when: false
+
+    # - name: Delete centrify directories
+    #   delegate_to: "{{ media_server }}" 
+    #   file:
+    #     path: /root/agents
+    #     state: absent
+
+    - name: Delete centrify directories
+      file:
+        path: /root/agents
+        state: absent
+
+    - name: "Unblock user unixadm"
+      lineinfile:
+        path: /etc/centrifydc/user.ignore
+        regex: '^unixadm.*'
+        line: 'unixadm'
+        state: present
+
+    - name: "Unblock Group unixadm"
+      lineinfile:
+        path: /etc/centrifydc/group.ignore
+        regex: '^unixadm.*'
+        line: 'unixadm'
+        state: present
+
+    - name: Execute adreload command
+      command: adreload
+      ignore_errors: yes
+
+    - name: add DNS
+      command: "/usr/sbin/addns -A -m -i {{ ansible_default_ipv4.address  }}"
+      register: centrify_result
+      #failed_when: centrify_result.rc != 0
+      ignore_errors: yes
+  
+  rescue:
+      - debug:
+           msg: 'I caught an error, can do stuff here to fix it, :-)'
+
+  #     - name: Create Log Directory
+  #       local_action:
+  #         module: file
+  #         path: "/data/tt-mobile-main/logs/{{ ansible_date_time.date }}"
+  #         state: directory
+  #         mode: '0755' .
+
+  #     - name: Error Log
+  #       local_action:
+  #         module: lineinfile
+  #         path: "/data/tt-mobile-main/logs/{{ ansible_date_time.date }}/{{ ansible_hostname}}.log"
+  #         create: yes
+  #         line: |
+  #                   -------------------------------------------------------------------------------------
+  #                   Centrify Operation Date & Time: {{ ansible_date_time.date }} / {{ ansible_date_time.time }}
+  #                   Centrify Operation Fail log: {{ centrify_result.msg }}
+
+  when: (ansible_distribution == "RedHat") and ('CentrifyDC' not in ansible_facts.packages) 
+
