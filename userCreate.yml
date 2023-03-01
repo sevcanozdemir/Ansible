@@ -1,0 +1,11 @@
+---
+  - name: Add user example
+    user:
+       name: "{{ item.name }}"
+       password: "{{ item.passwd }}"
+       comment: "{{ item.comment }}"
+       expires: -1
+       create_home: yes
+    with_items:
+       - { name: 'user', passwd: 'KEY', comment: 'comment' }
+
