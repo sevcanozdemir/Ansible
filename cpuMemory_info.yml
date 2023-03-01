@@ -1,0 +1,65 @@
+---
+  - name: Check the remote host subscription
+    hosts: all
+    gather_facts: yes
+#    become: yes
+    tasks:
+        - name: subscription status
+          shell: "subscription-manager list |grep -i status:| awk 'FNR == 2 {print $2}'"
+          register: command_output
+          when: ansible_facts['os_family']=="RedHat"
+        - debug:
+                 var: command_output.stdout_lines
+
+        - name: hostname information
+          shell: echo $HOSTNAME
+          register: hostname
+          when: ansible_facts['os_family']=="RedHat"
+        - name: hostname information
+          shell: hostname
+          register: hostname_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: ip information
+          debug: var={{inventory_hostname}}
+
+
+        - name: CPU
+          shell: " lscpu  | grep -i CPU'(s)' | awk '{print $2 }' | head -1 "
+          register: cpu
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: Memory
+          shell: " free -m | grep -i Mem: | awk '{print $2 }' "
+          register: memory
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: CPU
+          shell: " psrinfo -p "
+          register: cpu_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: Memory
+          shell: " prtconf | grep -i size: |awk '{print $3 }' "
+          register: memory_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+
+        - name: append
+          lineinfile:
+            dest: "/ansible/sunuculist/playbooks/server_cpu_memory.txt"
+#           line: "{{hostname.stdout }}; {{inventory_hostname}}; {{ command_output.stdout}}; {{cpu.stdout}}; {{memory.stdout}}"
+            line: "{{hostname.stdout }}; {{inventory_hostname}}; {{cpu.stdout}}; {{memory.stdout}}"
+            insertafter: EOF
+          delegate_to: localhost
+          when: ansible_facts['os_family']=="RedHat"
+
+
+
+        - name: append
+          lineinfile:
+            dest: "/ansible/sunuculist/playbooks/server_cpu_memory.txt"
+            line: "{{hostname_sol.stdout }}; {{inventory_hostname}};  {{cpu_sol.stdout}}; {{memory_sol.stdout}}"
+            insertafter: EOF
+          delegate_to: localhost
+          when: ansible_facts['os_family']=="Solaris"
