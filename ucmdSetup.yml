@@ -1,0 +1,69 @@
+---
+
+- name: Gather the rpm package facts
+  package_facts:
+    manager: auto
+
+- name: Check whether a package called ud-agent is installed
+  debug:
+    msg: ud-agent is not installed!
+  when: "'ud-agent' not in ansible_facts.packages"
+
+- name: Install uCMDB Software
+  block:
+
+    - name: "Check connectivity https://{{ media_server }} and it returns a status 200"
+      uri:
+        url: https://{{ media_server }}/agents/{{ rh_ucmdb_sw }}
+        validate_certs: no
+        status_code: 200
+      register: ucmdb_result
+
+    - name: Create directories
+      file:
+        path: /root/agents
+        state: directory
+        mode: '0755'
+
+    - name: Download uCMDB Files 
+      unarchive:
+        src: "https://{{ media_server }}/agents/{{ rh_ucmdb_sw }}"
+        dest: /root/agents
+        remote_src: yes
+        mode: '0755'
+        validate_certs: no
+      register: ucmdb_result
+
+    - name: Install ud-agent
+      shell: "/root/agents/rhelx86_64/agentinstall.sh /root/agents/rhelx86_64/ud-agent-linux-x64.rpm --url0 {{ ucmdb_IP_1 }}  --url1 {{ ucmdb_IP_2 }} --cert /root/agents/rhelx86_64"
+      register: ucmdb_result
+      failed_when: ucmdb_result.rc != 0
+
+    - name: Delete directories
+      file:
+        path: /root/agents
+        state: absent
+
+  rescue:
+      - debug:
+           msg: 'I caught an error, can do stuff here to fix it, :-)'
+
+      # - name: Create Log Directory
+      #   local_action:
+      #     module: file
+      #     path: "/data/oneshot/logs/{{ ansible_date_time.date }}"
+      #     state: directory
+      #     mode: '0755' 
+
+      # - name: Error Log
+      #   local_action:
+      #     module: lineinfile
+      #     path: "/data/oneshot/logs/{{ ansible_date_time.date }}/{{ ansible_hostname}}.log"
+      #     create: yes
+      #     line: |
+      #               -------------------------------------------------------------------------------------
+      #               uCMDB Operation Date & Time: {{ ansible_date_time.date }} / {{ ansible_date_time.time }}
+      #               uCMDB Operation Fail log: {{ ucmdb_result.msg }}
+
+  when: (ansible_distribution == "RedHat") and ('ud-agent' not in ansible_facts.packages)
+
