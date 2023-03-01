@@ -1,0 +1,129 @@
+---
+
+- name: Gather the rpm package facts
+  package_facts:
+    manager: auto
+
+- name: Check whether a package called VRTSnbpck is installed
+  debug:
+    msg: NetBackup is installed!
+  when: "'VRTSnbpck' in ansible_facts.packages"
+
+- name: Netbackup Software Installation
+  block:
+
+    - name: "Check connectivity https://{{ media_server }} and it returns a status 200"
+      uri:
+        url: https://{{ media_server }}/agents
+        validate_certs: no
+        status_code: 200
+      register: netbackup_result
+
+    - name: Install req package for RedHat7
+      package:
+        name: pexpect
+        state: latest
+      register: netbackup_result
+      when: ('pexpect' not in ansible_facts.packages) and (ansible_distribution_major_version == "7")
+
+    - name: Install req package
+      package:
+        name: python3-pexpect
+        state: latest
+      register: netbackup_result
+      when: ('python3-pexpect' not in ansible_facts.packages) and (ansible_distribution_major_version == "8")
+
+    - name: Netbackup preinstalaltion 
+      blockinfile:
+        path: /etc/hosts
+        marker: "## {mark} added by ansible (NetBackup)"
+        content: |
+                #
+                10.4.82.9            istnbp01.tt-tim.tr          istnbp01
+
+    - name: Create directories
+      file:
+        path: /root/agents
+        state: directory
+        mode: '0755'
+
+    - name: Download NetBackup Files
+      unarchive:
+        src: "https://{{ media_server }}/agents/{{ rh_netbackup_sw }}"
+        dest: /root/agents
+        remote_src: yes
+        mode: '0755'
+        validate_certs: no
+
+    - name: RHEL8 Alternative Execute Netbackup Installation Script
+      expect:
+        command: /bin/bash -c "//root/agents/NetBackup_9.1_redhat/install"
+        timeout: 300
+        removes: /root/agents/NetBackup_9.1_redhat/install
+        responses:
+           (.*)Do you wish to continue?(.*): "y"
+           (.*)Do you want to install the NetBackup client software for this client?(.*): "y"
+           (.*)Enter the name of the NetBackup master server(.*): "istnbp01"
+           (.*)name of the NetBackup client?(.*): "y"
+           (.*)Is this correct?(.*): "y"
+           (.*)Enter the authorization token for istnbp01 or q to skip:(.*): "YQWBIQWWDDCCCXJY"
+           (.*)Java GUI and JRE option:(.*): "2"  
+      register: netbackup_result
+      when: 
+        - ansible_distribution_major_version == "8"
+
+    - name: RHEL7 Alternative Execute Netbackup Installation Script
+      shell: |
+        set timeout 300
+        spawn //root/agents/NetBackup_9.1_redhat/install
+        expect "Do you wish to continue? *"
+        send "y\r"
+        expect "Do you want to install the NetBackup client software for this client? *"
+        send "y\r"
+        expect "Enter the name of the NetBackup master server :"
+        send "istnbp011\r"
+        expect "name of the NetBackup client? *"
+        send "y\r"
+        expect "Is this correct? *"
+        send "y\r"
+        expect "Enter the authorization token for istnbp01 or q to skip: *"
+        send "YQWBIQWWDDCCCXJY_BURASIKONTROL\r"
+        expect "Java GUI and JRE option: *"
+        send "2\r"
+        interact
+        exit 0
+      args:
+        executable: /usr/bin/expect
+      register: netbackup_result
+      when:
+         - ansible_distribution_major_version == "6" or ansible_distribution_major_version == "7"
+
+    - name: Delete directories
+      file:
+        path: /root/agents
+        state: absent
+      when:
+         - ansible_distribution_major_version == "8"
+
+  rescue:
+      - debug:
+           msg: 'I caught an error, can do stuff here to fix it, :-)'
+
+      # - name: Create Log Directory
+      #   local_action:
+      #     module: file
+      #     path: "/data/oneshot/logs/{{ ansible_date_time.date }}"
+      #     state: directory
+      #     mode: '0755' 
+
+      # - name: Error Log
+      #   local_action:
+      #     module: lineinfile
+      #     path: "/data/oneshot/logs/{{ ansible_date_time.date }}/{{ ansible_hostname}}.log"
+      #     create: yes
+      #     line: |
+      #               -------------------------------------------------------------------------------------
+      #               NetBackup Operation Date & Time: {{ ansible_date_time.date }} / {{ ansible_date_time.time }}
+      #               NetBackup Operation Fail log: {{ netbackup_result.msg }}
+
+  when: (ansible_distribution == "RedHat") and ('VRTSnbpck' not in ansible_facts.packages)  
