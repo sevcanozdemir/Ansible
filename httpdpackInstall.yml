@@ -1,5 +1,5 @@
 ---
-- name: Installing and Running Apache
+- name: Installing and Running Apache or Httpd
   hosts: all
 
   tasks:
