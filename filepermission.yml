@@ -1,6 +1,9 @@
 ---
 - name: Change file permission
   hosts: all
-  file:
-   path: /home/sevcanozdemir/linux2
-   mode: a+w
+
+  tasks:
+  - name: Files Permissions
+    file:
+      path: /home/sevcanozdemir/linux2
+      mode: a+w
