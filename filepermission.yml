@@ -1,0 +1,6 @@
+---
+- name: Change file permission
+  hosts: all
+  file:
+   path: /home/sevcanozdemir/linux2
+   mode: a+w
