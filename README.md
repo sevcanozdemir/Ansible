@@ -1,5 +1,5 @@
 # Ansible
 
-# ansible-playbook all -m ping 
+ansible-playbook all -m ping 
 
-# ansible-playbook -a "uptime" all
+ansible-playbook -a "uptime" all
