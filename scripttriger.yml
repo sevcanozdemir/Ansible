@@ -1,12 +1,63 @@
 ---
-- name: Istall NCPA Agent
+- name: Install NCPA Agent
   hosts: all
   become_method: su 
   gather_facts: no
   vars: 
-   rpm7: "ncpa-2.4.0.el7.x86_64.rpm"
-   rpm8: "ncpa-2.4.0.el8.x86_64.rpm"
+   rpm7: "/ansible/agents-repo/ncpa/ncpa-2.4.0.el7.x86_64.rpm"
+   rpm8: "/ansible/agents-repo/ncpa/ncpa-2.4.0.el8.x86_64.rpm"
+   destinatonpath: "/root/agents/ncpa/"
   tasks: 
   - name: Distribution version
     shell: " cat /etc/redhat-release |awk '{print $6,  $7}' "	
     register: version
+     when: ansible_facts['os_family']=="RedHat"
+
+  - name: Create directories
+    file:
+      path: {{ destinatonpath}}
+      state: directory
+      mode: '0755'
+
+  - name: Copy File v7
+    copy:
+      src: {{ rpm7}}
+      dest: /root/agents/ncpa/
+      when: 
+      - ansible_distribution == "RedHat"
+      - ansible_distribution_major_version == "7"
+    
+  - name: Copy File v7
+    copy:
+      src: {{ rpm8}}
+      dest: /root/agents/ncpa/
+      when: 
+      - ansible_distribution == "RedHat"
+      - ansible_distribution_major_version == "8"  
+   
+  - name: Install package
+    shell: "rpm -ivh /root/agents/ncpa/{{ rpm7 }}"
+    register: ncpa_result
+    failed_when: ncpa_result.rc != 0
+    when: 
+      - ansible_distribution == "RedHat"
+      - ansible_distribution_major_version == "7"
+
+
+  - name: Install package
+    shell: "rpm -ivh /root/agents/ncpa/{{ rpm8 }}"
+    register: ncpa_result
+    failed_when: ncpa_result.rc != 0
+    when: 
+      - ansible_distribution == "RedHat"
+      - ansible_distribution_major_version == "8"
+
+
+  - name: Delete directories
+    file:
+      path: /root/agents/ncpa
+      state: absent
+
+
+
+     
