@@ -6,12 +6,8 @@
   vars: 
    rpm7: "/ansible/agents-repo/ncpa/ncpa-2.4.0.el7.x86_64.rpm"
    rpm8: "/ansible/agents-repo/ncpa/ncpa-2.4.0.el8.x86_64.rpm"
-   destinatonpath: "/root/agents/ncpa/"
+   destinationpath: "/root/agents/ncpa/"
   tasks: 
-  - name: Distribution version
-    shell: " cat /etc/redhat-release |awk '{print $6,  $7}' "	
-    register: version
-     when: ansible_facts['os_family']=="RedHat"
 
   - name: Create directories
     file:
@@ -22,7 +18,7 @@
   - name: Copy File v7
     copy:
       src: {{ rpm7}}
-      dest: {{ destinatonpath}}
+      dest: {{ destinationpath}}
       when: 
       - ansible_distribution == "RedHat"
       - ansible_distribution_major_version == "7"
@@ -30,13 +26,13 @@
   - name: Copy File v7
     copy:
       src: {{ rpm8}}
-      dest: {{ destinatonpath}}
+      dest: {{ destinationpath}}
       when: 
       - ansible_distribution == "RedHat"
       - ansible_distribution_major_version == "8"  
    
   - name: Install package
-    shell: "rpm -ivh {{ destinatonpath}}{{ rpm7 }}"
+    shell: "rpm -ivh {{ destinationpath}}{{ rpm7 }}"
     register: ncpa_result
     failed_when: ncpa_result.rc != 0
     when: 
@@ -45,7 +41,7 @@
 
 
   - name: Install package
-    shell: "rpm -ivh {{ destinatonpath}}{{ rpm8 }}"
+    shell: "rpm -ivh {{ destinationpath}}{{ rpm8 }}"
     register: ncpa_result
     failed_when: ncpa_result.rc != 0
     when: 
@@ -55,7 +51,7 @@
 
   - name: Delete directories
     file:
-      path: {{ destinatonpath}}
+      path: {{ destinationpath}}
       state: absent
 
 
