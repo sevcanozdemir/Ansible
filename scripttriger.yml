@@ -1,0 +1,12 @@
+---
+- name: Istall NCPA Agent
+  hosts: all
+  become_method: su 
+  gather_facts: no
+  vars: 
+   rpm7: "ncpa-2.4.0.el7.x86_64.rpm"
+   rpm8: "ncpa-2.4.0.el8.x86_64.rpm"
+  tasks: 
+  - name: Distribution version
+    shell: " cat /etc/redhat-release |awk '{print $6,  $7}' "	
+    register: version
