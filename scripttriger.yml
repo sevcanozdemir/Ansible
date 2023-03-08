@@ -1,59 +1,55 @@
 ---
 - name: Install NCPA Agent
   hosts: all
-  become_method: su 
+  become_method: su
   gather_facts: no
-  vars: 
+  vars:
    rpm7: "/ansible/agents-repo/ncpa/ncpa-2.4.0.el7.x86_64.rpm"
    rpm8: "/ansible/agents-repo/ncpa/ncpa-2.4.0.el8.x86_64.rpm"
    destinationpath: "/root/agents/ncpa/"
-  tasks: 
+  tasks:
 
   - name: Create directories
     file:
-      path: {{ destinatonpath}}
+      path: "{{ destinationpath }}"
       state: directory
       mode: '0755'
 
   - name: Copy File v7
     copy:
-      src: {{ rpm7}}
-      dest: {{ destinationpath}}
-      when: 
+      src: "{{ rpm7 }}"
+      dest: "{{ destinationpath }}"
+      when:
       - ansible_distribution == "RedHat"
       - ansible_distribution_major_version == "7"
-    
+
   - name: Copy File v7
     copy:
-      src: {{ rpm8}}
-      dest: {{ destinationpath}}
-      when: 
+      src: "{{ rpm8 }}"
+      dest: "{{ destinationpath }}"
+      when:
       - ansible_distribution == "RedHat"
-      - ansible_distribution_major_version == "8"  
-   
+      - ansible_distribution_major_version == "8"
+
   - name: Install package
-    shell: "rpm -ivh {{ destinationpath}}{{ rpm7 }}"
+    shell: " rpm -ivh {{ destinationpath }}{{ rpm7 }} "
     register: ncpa_result
     failed_when: ncpa_result.rc != 0
-    when: 
+    when:
       - ansible_distribution == "RedHat"
       - ansible_distribution_major_version == "7"
 
 
   - name: Install package
-    shell: "rpm -ivh {{ destinationpath}}{{ rpm8 }}"
+    shell: " rpm -ivh {{ destinationpath }}{{ rpm8 }} "
     register: ncpa_result
     failed_when: ncpa_result.rc != 0
-    when: 
+    when:
       - ansible_distribution == "RedHat"
       - ansible_distribution_major_version == "8"
 
 
   - name: Delete directories
     file:
-      path: {{ destinationpath}}
+      path: "{{ destinationpath }}"
       state: absent
-
-
-
-     
