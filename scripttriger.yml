@@ -23,7 +23,7 @@
       - ansible_distribution == "RedHat"
       - ansible_distribution_major_version == "7"
 
-  - name: Copy File v7
+  - name: Copy File v8
     copy:
       src: "{{ rpm8 }}"
       dest: "{{ destinationpath }}"
