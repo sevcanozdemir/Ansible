@@ -8,3 +8,10 @@ ansible-galaxy collection install ansible.posix  --Install additional Ansible co
 
 
 https://docs.ansible.com/ansible/2.9/modules/
+
+--crontab
+*/3 * * * * /usr/bin/ansible-playbook /etc/ansible/playbooks/copy.yml -i /etc/ansible/playbooks/invIp
+
+
+- name: create file with a date in name
+  file: path="/path/somefile{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
