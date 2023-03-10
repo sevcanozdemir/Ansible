@@ -1,0 +1,17 @@
+---
+  - name: Check the remote host subscription
+    hosts: all
+    gather_facts: yes
+
+    tasks:
+    - name: hostname
+      shell: " hostname "
+      register: hostname
+
+    - name: append
+      lineinfile:
+        dest: "/etc/ansible/playbooks/hostname{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
+        create: yes
+        line: "{{hostname.stdout }}"
+        insertafter: EOF
+      delegate_to: localhost
