@@ -1,0 +1,9 @@
+---
+- name: Deletefile
+  hosts: all
+  become: false
+  tasks:
+  - name: Delete
+    ansible.builtin.file:
+      path: /tmp/some.cfg
+      state: "absent"
