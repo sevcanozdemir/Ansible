@@ -17,4 +17,5 @@ https://docs.ansible.com/ansible/2.9/modules/
   file: path="/path/somefile{{ lookup('pipe', 'date +%Y%m%d-%H%M') }}"
 
 
+--start-at-task --> task başlangıcını atıyoruz
  
