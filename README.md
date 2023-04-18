@@ -20,3 +20,7 @@ https://docs.ansible.com/ansible/2.9/modules/
 --start-at-task 'Task name'  --> task başlangıcını atıyoruz
 --extra-vars password=passwd123  --> değişkeni komuttan girmek istiyorsak
  
+
+ ansible.builtin.shell  --> modulünün çalışması için python3.9 'a ihtiyaç vardır.
+sudo apt update
+sudo apt install python3.9
