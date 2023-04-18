@@ -10,7 +10,7 @@
       register: csv_data
 
     - name: Her satır için komutları çalıştır
-      ansible.builtin.shell: "{{ item.command }}"
+      ansible.builtin.shell: "{{ item.command }}"   ## bu modül için python3.9 gereklidir , shell modulu kullanılabilir.
       loop: "{{ csv_data.list }}"
       vars:
         ansible_connection: ssh
