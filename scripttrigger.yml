@@ -1,0 +1,28 @@
+- name: CSV dosyasını oku ve komutları çalıştır
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: CSV dosyasını oku
+      community.general.read_csv:
+        path: /etc/ansible/playbooks/file.csv
+        delimiter: ','
+      register: csv_data
+
+    - name: Her satır için komutları çalıştır
+      ansible.builtin.shell: "{{ item.command }}"
+      loop: "{{ csv_data.list }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ item.user }}"
+        ansible_host: "{{ item.ip_address }}"
+      when: item.command is defined
+
+
+
+
+###csv 
+###ip_address,user,command
+##192.168.1.100,sevcanozdemir,/etc/test.sh
+##192.168.1.101,root,ls -l
+##:S192.168.1.105,root,./test.sh
