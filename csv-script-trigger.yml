@@ -11,7 +11,7 @@
         delimiter: ','
       register: csv_data
 
-    - name: Her satırda bulunan bilgileri al
+    - name: Her satırı çalıştır
       shell: ssh -o StrictHostKeyChecking=no {{ item.user }}@{{ item.ip_address }} '{{ item.command }}'
       loop: "{{ csv_data.list }}"
 
