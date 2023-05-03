@@ -1,0 +1,32 @@
+# cat script-trigger.yml
+- name: CSV dosyasını oku ve komutları çalıştır
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ansible_python_interpreter: auto
+    csv_file: "/ansible/sunuculist/playbooks/file.csv"
+  tasks:
+    - name: CSV dosyasını oku
+      community.general.read_csv:
+        path: "{{ csv_file }}"
+        delimiter: ','
+      register: csv_data
+
+    - debug:
+        var: csv_data
+
+    - include_tasks: script-trigger_2.yml
+      loop: "{{ csv_data.list }}"
+
+# cat script-trigger_2.yml
+  - block:
+
+    - name: Her satır için komutları çalıştır
+      ansible.builtin.shell: "{{ item.command }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ item.user }}"
+        ansible_host: "{{ item.ip_address }}"
+      when: item.command is defined
+
+# ansible-playbook script-trigger.yml
