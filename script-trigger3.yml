@@ -1,0 +1,23 @@
+---
+- name: CSV dosyasını oku ve komutları çalıştır
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: CSV dosyasını oku
+      community.general.read_csv:
+        path: /ansible/sunuculist/playbooks/file.csv
+        delimiter: ','
+      register: csv_data
+
+    - name: Her satırı çalıştır
+#      shell: ssh -o StrictHostKeyChecking=no {{ item.user }}@{{ item.ip_address }} '{{ item.command }}'
+      shell: ssh -o StrictHostKeyChecking=no root@{{ item.ip_address }} 'su - {{ item.user }} -c "{{ item.command }}"'
+      loop: "{{ csv_data.list }}"
+      when: item.command is defined
+
+    - name: Her satırda bulunan bilgileri al
+      debug:
+        msg: "IP adresi: {{ item.ip_address }}, Kullanıcı adı: {{ item.user }}, Script: {{ item.command }}"
+      loop: "{{ csv_data.list }}"
+
+
