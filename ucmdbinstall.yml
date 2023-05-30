@@ -1,0 +1,84 @@
+---
+- name: Install UCMDB Agent
+  hosts: all
+  become_method: su
+  gather_facts: yes
+  vars:
+   redhat_path: "/ansible/agents-repo/ucmdb/Linux_64_udagent.zip"
+   sol_path: "/ansible/agents-repo/ucmdb/solaris-sparc-ud-agent.zip"
+   redhat_name: "Linux_64_udagent.zip"
+   sol_name: "solaris-sparc-ud-agent.zip"
+   redhat_name2: "Linux_64_udagent"
+   sol_name2: "solaris-sparc-ud-agent"
+
+   destinationpath: "/tmp"
+  tasks:
+  - name: Install NCPA
+    block:
+
+      - name: Copy File Red Hat
+        copy:
+          src: "{{ redhat_path }}"
+          dest: "{{ destinationpath }}"
+        when: (ansible_facts['os_family']=="RedHat")
+
+
+      - name: Copy File Solaris
+        copy:
+          src: "{{ sol_path }}"
+          dest: "{{ destinationpath }}"
+        when: (ansible_facts['os_family']=="Solaris")
+
+      - name: Arşiv Dosyasını Çıkarma Red Hat
+        unarchive:
+          src: "{{ destinationpath }}/{{redhat_name}}"
+          dest: "{{ destinationpath }}"
+          remote_src: yes
+          mode: '0777'
+        when: (ansible_facts['os_family']=="RedHat")
+
+
+      - name: Arşiv Dosyasını Çıkarma Solaris
+        unarchive:
+          src: "{{ destinationpath }}/{{sol_name}}"
+          dest: "{{ destinationpath }}"
+          remote_src: yes
+          mode: '0777'
+        when: (ansible_facts['os_family']=="Solaris")
+
+
+      - name: UnIntall Red Hat
+        shell: "{{ destinationpath }}/{{redhat_name2}}/agentinstall.sh --uninstall"
+        register: ucmdb_result
+        failed_when: ucmdb_result.rc != 0
+        when: (ansible_facts['os_family']=="RedHat")
+
+
+      - name: Intall Red Hat
+        shell: |
+            cd {{ destinationpath }}/{{redhat_name2}}
+            ./agentinstall.sh ud-agent-linux-x64.rpm --url0 10.4.76.4
+        register: ucmdb_result
+        failed_when: ucmdb_result.rc != 0
+        when: (ansible_facts['os_family']=="RedHat")
+
+
+      - name: UnIntall Solaris
+        shell: "{{ destinationpath }}/{{sol_name2}}/agentinstall.sh --uninstall"
+        register: ucmdb_result
+        failed_when: ucmdb_result.rc != 0
+        when: (ansible_facts['os_family']=="Solaris")
+
+
+      - name: Intall Solaris
+        shell: |
+            cd {{ destinationpath }}/{{sol_name2}}
+            ./agentinstall.sh ud-agent-solaris-sparc.sparc --url0 10.4.76.4
+        register: ucmdb_result
+        failed_when: ucmdb_result.rc != 0
+        when: (ansible_facts['os_family']=="Solaris")
+
+    rescue:
+        - debug:
+             msg: 'UCMDB kurulumunda hata var. Loglarini kontrol ediniz !!!'
+
