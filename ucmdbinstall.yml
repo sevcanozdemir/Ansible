@@ -13,7 +13,7 @@
 
    destinationpath: "/tmp"
   tasks:
-  - name: Install NCPA
+  - name: Install UCMDB
     block:
 
       - name: Copy File Red Hat
@@ -47,14 +47,14 @@
         when: (ansible_facts['os_family']=="Solaris")
 
 
-      - name: UnIntall Red Hat
+      - name: UnInstall Red Hat
         shell: "{{ destinationpath }}/{{redhat_name2}}/agentinstall.sh --uninstall"
         register: ucmdb_result
         failed_when: ucmdb_result.rc != 0
         when: (ansible_facts['os_family']=="RedHat")
 
 
-      - name: Intall Red Hat
+      - name: Install Red Hat
         shell: |
             cd {{ destinationpath }}/{{redhat_name2}}
             ./agentinstall.sh ud-agent-linux-x64.rpm --url0 10.4.76.4
@@ -63,14 +63,14 @@
         when: (ansible_facts['os_family']=="RedHat")
 
 
-      - name: UnIntall Solaris
+      - name: UnInstall Solaris
         shell: "{{ destinationpath }}/{{sol_name2}}/agentinstall.sh --uninstall"
         register: ucmdb_result
         failed_when: ucmdb_result.rc != 0
         when: (ansible_facts['os_family']=="Solaris")
 
 
-      - name: Intall Solaris
+      - name: Install Solaris
         shell: |
             cd {{ destinationpath }}/{{sol_name2}}
             ./agentinstall.sh ud-agent-solaris-sparc.sparc --url0 10.4.76.4
@@ -81,4 +81,3 @@
     rescue:
         - debug:
              msg: 'UCMDB kurulumunda hata var. Loglarini kontrol ediniz !!!'
-
