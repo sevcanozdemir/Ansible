@@ -1,0 +1,87 @@
+---
+  - name: Check the remote host subscription
+    hosts: all
+    gather_facts: yes
+#    become: yes
+    tasks:
+#        - name: subscription status
+#          shell: "subscription-manager list |grep -i status:| awk 'FNR == 2 {print $2}'"
+#          register: command_output
+#          when: ansible_facts['os_family']=="RedHat"
+#        - debug:
+#                 var: command_output.stdout_lines
+
+        - name: hostname information
+          shell: echo $HOSTNAME
+          register: hostname
+          when: ansible_facts['os_family']=="RedHat"
+        - name: hostname information
+          shell: hostname
+          register: hostname_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: ip information
+          debug: var={{inventory_hostname}}
+
+
+        - name: hardware type
+        #  shell: "dmidecode -t1  | grep -i Manufacturer: |awk '{print $2, $3 }'"
+          shell: " cat /sys/devices/virtual/dmi/id/sys_vendor "
+          register: hardware
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: Distribution version
+          shell: " cat /etc/redhat-release |awk '{print $6,  $7}' "
+          register: version
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: hardware type
+          shell: "prtdiag -v | grep -i Oracle | awk '{print $6,$7}'"
+          register: hardware_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: Distribution version
+          shell: " uname -a  |  awk '{print $1, $3, $4}' "
+          register: version_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: CPU
+          shell: " lscpu  | grep -i CPU'(s)' | awk '{print $2 }' | head -1 "
+          register: cpu
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: Memory
+          shell: " free -m | grep -i Mem: | awk '{print $2 }' "
+          register: memory
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: CPU
+          shell: " psrinfo -p "
+          register: cpu_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: Memory
+          shell: " prtconf | grep -i size: |awk '{print $3 }' "
+          register: memory_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+
+        - name: append
+          lineinfile:
+            dest: "/ansible/projects/sunucubilgileri/sunucu_bilgileri-sabit.txt"
+            line: "{{hostname.stdout }}; {{inventory_hostname}}; {{hardware.stdout}}; {{version.stdout}}** ; {{cpu.stdout}}; {{memory.stdout|int//1024}}"
+            create: yes
+            insertafter: EOF
+          delegate_to: localhost
+          when: ansible_facts['os_family']=="RedHat"
+
+
+
+        - name: append
+          lineinfile:
+            dest: "/ansible/projects/sunucubilgileri/sunucu_bilgileri-sabit.txt"
+            line: "{{hostname_sol.stdout }}; {{inventory_hostname}};  {{hardware_sol.stdout}}; {{version_sol.stdout}}** ;  {{cpu_sol.stdout}}; {{memory_sol.stdout|int//1024}}"
+            create: yes
+            insertafter: EOF
+          delegate_to: localhost
+          when: ansible_facts['os_family']=="Solaris"
