@@ -1,0 +1,56 @@
+---
+  - name: Check the remote host subscription
+    hosts: all
+    gather_facts: no
+
+    tasks:
+
+        - name: platform
+          win_shell: |
+            wmic csproduct get vendor | findstr /v "Vendor"
+          register: platform
+
+        - name: Debug
+          debug:
+           var: platform.stdout_lines[1]
+
+
+        - name: hostname
+          win_shell: |
+            hostname
+          register: hostname
+
+        - name: version
+          win_shell: systeminfo | findstr /B /C:"OS Name"
+          register: version
+
+        - name: Debug
+          debug:
+           var: version.stdout
+
+
+
+        - name: CPU
+          win_shell: wmic cpu get NumberOfCores | findstr /v "NumberOfCores"
+          register: cpu
+
+        - name: Debug
+          debug:
+           var: cpu.stdout_lines[1]
+
+        - name: Memory
+          win_shell: wmic memorychip get capacity | findstr /v "Capacity"
+          register: memory
+
+        - name: Debug
+          debug:
+           var: memory.stdout_lines[1]
+
+
+        - name: append
+          lineinfile:
+            path: "/ansible/projects/sunucubilgileri/sunucu_bilgileri-windows.txt"
+            line: "{{hostname.stdout_lines[0]}}; {{version.stdout.split()[2:]| join (' ')}}; {{platform.stdout_lines[1]}} ; {{cpu.stdout_lines[1]}}; {{memory.stdout_lines[1]|int//1073741824}}"
+            create: yes
+            insertafter: EOF
+          delegate_to: localhost
