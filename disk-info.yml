@@ -1,0 +1,35 @@
+---
+  - name: Check the remote host subscription
+    hosts: all
+    gather_facts: yes
+#    become: yes
+    tasks:
+
+        - name: hostname information
+          shell: echo $HOSTNAME
+          register: hostname
+          when: ansible_facts['os_family']=="RedHat"
+        - name: hostname information
+          shell: hostname
+          register: hostname_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: ip information
+          debug: var={{inventory_hostname}}
+
+
+        - name: disk size
+          shell: "df -h --total | tail -n 1 | awk '{print $2}' "
+          register: disk_redhat
+          when: ansible_facts['os_family']=="RedHat"
+
+
+
+        - name: append
+          lineinfile:
+            dest: "/ansible/projects/sunucubilgileri/disk-mobilgb.txt"
+            line: "{{hostname.stdout }}; {{inventory_hostname}}; {{disk_redhat.stdout}}"
+            create: yes
+            insertafter: EOF
+          delegate_to: localhost
+          when: ansible_facts['os_family']=="RedHat"
