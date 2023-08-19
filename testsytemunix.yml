@@ -1,0 +1,75 @@
+---
+  - name: Check the remote host subscription
+    hosts: all
+    gather_facts: yes
+#    become: yes
+    tasks:
+        - name: subscription status
+          shell: "subscription-manager list |grep -i status:| awk 'FNR == 2 {print $2}'"
+          register: command_output
+          when: ansible_facts['os_family']=="RedHat"
+        - debug:
+                 var: command_output.stdout_lines
+
+        - name: hostname information
+          shell: echo $HOSTNAME
+          register: hostname
+          when: ansible_facts['os_family']=="RedHat"
+        - name: hostname information
+          shell: hostname
+          register: hostname_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: ip information
+          debug: var={{inventory_hostname}}
+
+        - name: OS Tipi
+          shell: " cat /etc/redhat-release "
+          register: os_tipi
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: Marka
+          shell: "dmidecode -t1  | grep -i Manufacturer: |awk '{print $2, $3 }'"
+          register: marka
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: Model
+          shell: "dmidecode -t system   | grep -i product |awk '{print $3, $4 , $5 }'"
+          register: model
+          when: ansible_facts['os_family']=="RedHat"
+
+        - name: OS Tipi
+          shell: " uname -a  |  awk '{print $1, $3, $4}' "
+          register: os_tipi_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: Marka
+          shell: "prtdiag -v | grep -i Oracle | awk '{print $3,$4}'"
+          register: marka_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+        - name: Model
+          shell: " prtdiag -v | grep -i Oracle | awk '{print $6,$7}' "
+          register: model_sol
+          when: ansible_facts['os_family']=="Solaris"
+
+
+        - name: append
+          lineinfile:
+            dest: "/ansible/projects/sunucubilgileri/testsystemunix-serverinfo.txt"
+            line: "{{hostname.stdout }}; {{inventory_hostname}}; {{os_tipi.stdout}}**; {{marka.stdout}} ; {{model.stdout}} "
+            create: yes
+            insertafter: EOF
+          delegate_to: localhost
+          when: ansible_facts['os_family']=="RedHat"
+
+
+
+        - name: append
+          lineinfile:
+            dest: "/ansible/projects/sunucubilgileri/testsystemunix-serverinfo.txt"
+            line: "{{hostname_sol.stdout }}; {{inventory_hostname}}; {{os_tipi_sol.stdout}}**; {{marka_sol.stdout}} ; {{model_sol.stdout}}"
+            create: yes
+            insertafter: EOF
+          delegate_to: localhost
+          when: ansible_facts['os_family']=="Solaris"
