@@ -1,0 +1,78 @@
+---
+  - name: Install NetBackup Agent
+    hosts: all
+    gather_facts: yes
+
+    tasks:
+      - name: Gather the rpm package facts
+        package_facts:
+          manager: auto
+
+      - name: Check whether a package called VRTSnbpck is installed
+        debug:
+          msg: NetBackup is installed!
+        when: "'VRTSnbpck' in ansible_facts.packages"
+
+      - name: Netbackup Software Installation
+        block:
+
+          - name: Install req package for RedHat7
+            package:
+                name: pexpect
+                state: latest
+            register: netbackup_result
+            when: ('pexpect' not in ansible_facts.packages) and (ansible_distribution_major_version == "7")
+
+          - name: Install req package
+            package:
+                name: python3-pexpect
+                state: latest
+            register: netbackup_result
+            when: ('python3-pexpect' not in ansible_facts.packages) and (ansible_distribution_major_version == "8")
+
+          - name: Create directories
+            file:
+             path: /tmp/agents
+             state: directory
+             mode: 0755
+
+          - name: Copy File
+            copy:
+              src: /ansible/agents-repo/netbackup/NetBackup_9.1_redhat.tar
+              dest: /tmp/agents
+
+          - name: Arşiv Dosyasını Çıkarma
+            unarchive:
+             src: /tmp/agents/NetBackup_9.1_redhat.tar
+             dest: /tmp/agents
+             remote_src: yes
+             mode: '0777'
+
+          - name: Netbackup preinstalaltion
+            blockinfile:
+              path: /etc/hosts
+              marker: "## {mark} added by ansible (NetBackup)"
+              content: |
+                      #
+                      10.4.82.9       istnbp01        istnbp01.tt-tim.tr
+
+          - name: Install NetBackup client
+            expect:
+               command: /tmp/agents/NetBackup_9.1_redhat/install
+               timeout: 300
+               responses:
+                (.*)Do you wish to continue?(.*): "y"
+                (.*)Do you want to install the NetBackup client software for this client?(.*): "y"
+                (.*)Enter the name of the NetBackup master server(.*): "istnbp01"
+                (.*)name of the NetBackup client?(.*): "y"
+                (.*)NetBackup may not operate?(.*): "y"
+                (.*)Java GUI and JRE option:(.*): "2"
+
+
+
+
+
+        when: (ansible_facts['os_family']=="RedHat")
+        rescue:
+          - debug:
+               msg: 'I caught an error, can do stuff here to fix it, :-)'
