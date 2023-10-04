@@ -1,0 +1,53 @@
+---
+  - name: Install Centrify Agent
+    hosts: all
+    gather_facts: yes
+
+    tasks:
+      - name: Gather the rpm package facts
+        package_facts:
+          manager: auto
+
+      - name: Check whether a package called Centrify is installed
+        debug:
+          msg: Centrify is installed!
+        when: "'CentrifyDC' in ansible_facts.packages"
+
+      - name: Centrify Software Installation
+        block:
+
+          - name: Create directories
+            file:
+             path: /tmp/agents
+             state: directory
+             mode: 0755
+
+          - name: Copy File
+            copy:
+              src: /ansible/agents-repo/centrify/Centrify-Infrastructure-Services-18.11-agents-DM.zip
+              dest: /tmp/agents
+
+          - name: Arşiv Dosyasını Çıkarma
+            unarchive:
+             src: /tmp/agents/Centrify-Infrastructure-Services-18.11-agents-DM.zip
+             dest: /tmp/agents
+             remote_src: yes
+             mode: '0777'
+
+          - name: install
+            shell: |
+              cd /tmp/agents/Centrify-Infrastructure-Services-18.11-agents-DM
+              /tmp/agents/Centrify-Infrastructure-Services-18.11-agents-DM/install-bundle.sh --ent-suite
+
+          - name: Delete directories
+            file:
+              path: /tmp/agents
+              state: absent
+
+
+
+        when: (ansible_facts['os_family']=="RedHat") and ('CentrifyDC' not in ansible_facts.packages)
+
+        rescue:
+          - debug:
+               msg: 'I caught an error, can do stuff here to fix it, :-)'
